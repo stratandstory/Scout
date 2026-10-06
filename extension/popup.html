@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 380px;
+      max-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      color: #1a1a1a;
+      background: #fff;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+    header h1 { font-size: 14px; font-weight: 600; }
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9ca3af;
+    }
+    .dot.connected { background: #16a34a; }
+    .dot.capturing { background: #ca8a04; }
+    .dot.transcribing { background: #2563eb; }
+    .dot.error { background: #dc2626; }
+    #tab-list {
+      overflow-y: auto;
+      max-height: 420px;
+    }
+    .tab-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .tab-item:hover { background: #f9fafb; }
+    .tab-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .tab-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .tab-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .tab-status {
+      font-size: 11px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tab-transcript {
+      font-size: 11px;
+      color: #4b5563;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+    .capture-btn {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .capture-btn.start {
+      background: #2563eb;
+      color: #fff;
+    }
+    .capture-btn.start:hover { background: #1d4ed8; }
+    .capture-btn.stop {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .capture-btn.stop:hover { background: #fecaca; }
+    .capture-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: #9ca3af;
+    }
+    .audible-badge {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+      vertical-align: middle;
+      opacity: 0.5;
+    }
+    .audio-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: #f9fafb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .audio-btn:hover { background: #e5e7eb; }
+    .audio-btn svg { width: 16px; height: 16px; fill: #374151; }
+    .audio-btn.muted svg { fill: #dc2626; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Scout</h1>
+    <div class="server-status">
+      <span class="dot" id="server-dot"></span>
+      <span id="server-label">Checking...</span>
+      <button id="settings-btn" title="Scout settings">Settings</button>
+    </div>
+  </header>
+  <div id="tab-list"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

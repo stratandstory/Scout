@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Scout Settings</title><style>body{max-width:640px;margin:40px auto;font:14px system-ui,sans-serif;color:#1f2937}label{display:block;margin:18px 0 6px;font-weight:600}input{box-sizing:border-box;width:100%;padding:9px}button{margin-top:18px;padding:9px 14px;border:0;border-radius:5px;background:#2563eb;color:#fff;cursor:pointer}.hint{color:#4b5563;line-height:1.5}.saved{margin-left:10px;color:#15803d}</style></head>
+<body>
+  <h1>Scout Settings</h1>
+  <p class="hint">Scout only connects to a local companion server. Copy the token from your repository's <code>.env</code> file; it keeps other local apps and websites from accessing your calendar and captures.</p>
+  <label for="server-url">Local server URL</label>
+  <input id="server-url" value="http://127.0.0.1:8765" autocomplete="off">
+  <label for="local-token">Local access token</label>
+  <input id="local-token" type="password" autocomplete="new-password">
+  <button id="save">Save settings</button><span id="saved" class="saved"></span>
+  <script src="options.js"></script>
+</body>
+</html>

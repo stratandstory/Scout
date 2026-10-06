@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Scout",
+  "version": "2.0.0",
+  "description": "Captures audio and video from browser tabs for real-time transcription and slide extraction",
+  "permissions": [
+    "tabCapture",
+    "activeTab",
+    "storage",
+    "offscreen",
+    "tabs",
+    "alarms",
+    "notifications",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.zoom.us/*",
+    "*://*.webex.com/*",
+    "*://*.goldcast.io/*",
+    "*://*.cvent.com/*",
+    "*://*.cvent.me/*",
+    "*://*.on24.com/*",
+    "*://meet.google.com/*",
+    "*://*.teams.microsoft.com/*",
+    "*://*.teams.live.com/*",
+    "*://*.gotomeeting.com/*",
+    "*://*.whereby.com/*",
+    "*://*.livestorm.co/*",
+    "*://*.hopin.com/*",
+    "*://*.bigmarker.com/*",
+    "*://*.crowdcast.io/*",
+    "*://*.demio.com/*",
+    "*://*.streamyard.com/*",
+    "*://*.hardskill.exchange/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Scout",
+    "default_icon": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}

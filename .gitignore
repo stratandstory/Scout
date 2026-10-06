@@ -1,0 +1,26 @@
+node_modules/
+.env
+.env.local
+.env.*
+!.env.example
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Captures (stored outside repo at ~/Scout-captures/)
+captures/
+
+# Runtime state (stored at ~/.scout/)
+queued-events.json
+tokens-*.json
+
+# Claude Code local config
+.mcp.json
+
+# Common credential exports
+credentials.json
+service-account*.json
+*.pem
+*.key

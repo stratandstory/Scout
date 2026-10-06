@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scout Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header h1::before { content: '🎙'; font-size: 22px; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: #94a3b8;
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 16px;
+    }
+    .refresh-info { opacity: 0.7; }
+    .uptime { font-variant-numeric: tabular-nums; }
+    .grid {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .card.full-width { grid-column: 1 / -1; }
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .card-count {
+      font-size: 12px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+    .card-body { padding: 0; }
+    .card-body.padded { padding: 16px 18px; }
+    .card-empty {
+      padding: 32px 18px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    /* Account status */
+    .account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      border-bottom: 1px solid #f8f8f8;
+    }
+    .account-row:last-child { border-bottom: none; }
+    .account-name { font-size: 13px; font-weight: 500; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fef2f2; color: #991b1b; }
+    .badge-yellow { background: #fefce8; color: #854d0e; }
+    .badge-blue { background: #eff6ff; color: #1e40af; }
+    .badge-gray { background: #f3f4f6; color: #6b7280; }
+
+    /* Event / capture rows */
+    .row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid #f8f8f8;
+    }
+    .row:last-child { border-bottom: none; }
+    .row:hover { background: #fafafa; }
+    .row-time {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      min-width: 70px;
+      padding-top: 1px;
+      font-variant-numeric: tabular-nums;
+    }
+    .row-content { flex: 1; min-width: 0; }
+    .row-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .row-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .row-desc {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 3px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .row-badge {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .capture-btn {
+      padding: 4px 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .capture-btn.start {
+      background: #2563eb;
+      color: #fff;
+    }
+    .capture-btn.start:hover { background: #1d4ed8; }
+    .capture-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .mode-toggle span {
+      padding: 2px 8px;
+      transition: all 0.15s;
+    }
+    .mode-toggle .mode-notify {
+      background: #f3f4f6; color: #6b7280;
+    }
+    .mode-toggle .mode-auto {
+      background: #f3f4f6; color: #6b7280;
+    }
+    .mode-toggle[data-mode="notify"] .mode-notify {
+      background: #374151; color: #fff;
+    }
+    .mode-toggle[data-mode="auto"] .mode-auto {
+      background: #2563eb; color: #fff;
+    }
+
+    /* Schedule event cards */
+    .event-card {
+      display: flex;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.1s;
+    }
+    .event-card:last-child { border-bottom: none; }
+    .event-card:hover { background: #f8fafc; }
+    .event-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .event-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+    .event-body { flex: 1; min-width: 0; }
+    .event-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .event-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #111827;
+    }
+    .event-time {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .event-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .event-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .event-tag.zoom { background: #dbeafe; color: #1e40af; }
+    .event-tag.google-meet { background: #dcfce7; color: #166534; }
+    .event-tag.teams { background: #ede9fe; color: #5b21b6; }
+    .event-tag.webex { background: #fef3c7; color: #92400e; }
+    .event-desc {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .event-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.1s;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn svg { width: 14px; height: 14px; }
+
+    /* Active capture sessions */
+    .capture-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid #f8f8f8;
+    }
+    .capture-row:last-child { border-bottom: none; }
+    .pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .capture-info { flex: 1; min-width: 0; }
+    .capture-title {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .capture-stats {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Recent captures */
+    .recent-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      border-bottom: 1px solid #f8f8f8;
+    }
+    .recent-row:last-child { border-bottom: none; }
+    .recent-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-title {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recent-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 1px;
+    }
+    .recent-context {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 3px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .recent-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .recent-path {
+      font-size: 10px;
+      color: #c0c5cc;
+      margin-top: 4px;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-xs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #f3f4f6;
+      color: #374151;
+      text-decoration: none;
+    }
+    .btn-xs:hover { background: #e5e7eb; }
+    .btn-remove { width:22px;height:22px;border:0;border-radius:4px;background:transparent;color:#9ca3af;font-size:16px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .btn-remove:hover { background:#fee2e2;color:#dc2626; }
+
+    /* Day group headers in schedule */
+    .day-header {
+      padding: 10px 18px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      background: #f9fafb;
+      border-bottom: 1px solid #f0f0f0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .day-header.today { color: #2563eb; }
+    .day-header.tomorrow { color: #7c3aed; }
+
+    /* API keys status bar */
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+    }
+    .status-dot.ok { background: #22c55e; border-color: #16a34a; }
+    .status-dot.warn { background: #eab308; border-color: #ca8a04; }
+    .status-dot.off { background: #d1d5db; border-color: #9ca3af; }
+
+    .system-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .system-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+    .system-accounts .account-row {
+      padding: 6px 0;
+      border-bottom: none;
+    }
+    .system-accounts .account-row:first-child { padding-top: 0; }
+
+    .error-banner {
+      max-width: 1200px;
+      margin: 24px auto 0;
+      padding: 12px 24px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: #991b1b;
+      font-size: 13px;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; padding: 0 12px; }
+      .card.full-width { grid-column: 1; }
+      .system-grid { grid-template-columns: 1fr; gap: 16px; }
+      header { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Scout</h1>
+    <div class="header-right">
+      <span class="uptime" id="uptime"></span>
+      <span class="refresh-info" id="refresh-info">Refreshing in 15s</span>
+    </div>
+  </header>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="grid">
+    <!-- System Status -->
+    <div class="card full-width">
+      <div class="card-header"><h2>System Status</h2></div>
+      <div class="card-body padded">
+        <div class="system-grid">
+          <div>
+            <div class="system-section-label">Server</div>
+            <div class="status-bar" id="status-bar"></div>
+          </div>
+          <div>
+            <div class="system-section-label">Calendar Accounts</div>
+            <div class="system-accounts" id="accounts-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Captures -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Active Captures</h2>
+        <span class="card-count" id="active-count"></span>
+      </div>
+      <div class="card-body" id="active-body"></div>
+    </div>
+
+    <!-- Event Queue -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Event Queue</h2>
+        <span class="card-count" id="queue-count"></span>
+      </div>
+      <div class="card-body" id="queue-body"></div>
+    </div>
+
+    <!-- Upcoming Schedule -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h2>Upcoming Schedule</h2>
+        <span class="card-count" id="today-count"></span>
+      </div>
+      <div class="card-body" id="today-body"></div>
+    </div>
+
+    <!-- Recent Captures -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h2>Recent Captures</h2>
+        <span class="card-count" id="captures-count"></span>
+      </div>
+      <div class="card-body" id="captures-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = window.location.origin;
+    const REFRESH_INTERVAL = 15;
+    let countdown = REFRESH_INTERVAL;
+    let serverStartTime = null;
+
+    async function fetchJSON(path) {
+      const res = await fetch(BASE + path);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      return res.json();
+    }
+
+    function formatTime(iso) {
+      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function formatDuration(startIso) {
+      const ms = Date.now() - new Date(startIso).getTime();
+      const mins = Math.floor(ms / 60000);
+      if (mins < 60) return `${mins}m`;
+      const hrs = Math.floor(mins / 60);
+      return `${hrs}h ${mins % 60}m`;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+
+    async function queueEvent(btn, event) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch(BASE + '/events/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: event.id,
+            summary: event.summary,
+            start: event.start,
+            end: event.end,
+            meetingUrl: event.meetingUrl,
+            platform: event.platform
+          })
+        });
+        if (res.ok) {
+          btn.outerHTML = '<span class="badge badge-blue">Queued</span>';
+          countdown = 2;
+        } else {
+          btn.textContent = 'Error';
+        }
+      } catch {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+      }
+    }
+
+    async function openCapture(id) {
+      try {
+        await fetch(BASE + '/captures/' + encodeURIComponent(id) + '/open', { method: 'POST' });
+      } catch {}
+    }
+
+    async function removeFromQueue(id) {
+      try {
+        const res = await fetch(BASE + '/events/queue/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (res.ok) countdown = 1;
+      } catch {}
+    }
+
+    async function toggleMode(el) {
+      const id = el.dataset.eventId;
+      const current = el.dataset.mode;
+      const next = current === 'auto' ? 'notify' : 'auto';
+      try {
+        const res = await fetch(BASE + '/events/queue/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: next })
+        });
+        if (res.ok) {
+          el.dataset.mode = next;
+          countdown = 2;
+        }
+      } catch {}
+    }
+
+    function badgeFor(status) {
+      const map = {
+        'queued': ['Queued', 'badge-gray'],
+        'opened': ['Opened', 'badge-blue'],
+        'in-progress': ['In Progress', 'badge-yellow'],
+        'past': ['Past', 'badge-gray'],
+        'notify': ['Notify', 'badge-gray'],
+        'auto': ['Auto', 'badge-blue']
+      };
+      const [label, cls] = map[status] || [status, 'badge-gray'];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function platformLabel(platform) {
+      const map = {
+        'zoom': 'Zoom', 'google-meet': 'Google Meet', 'teams': 'Teams',
+        'webex': 'Webex', 'goldcast': 'Goldcast', 'cvent': 'Cvent',
+        'on24': 'ON24', 'salesforce-plus': 'Salesforce+', 'generic': 'Web'
+      };
+      return map[platform] || platform || '';
+    }
+
+    function platformColor(platform) {
+      const map = {
+        'zoom': '#2d8cff', 'google-meet': '#00897b', 'teams': '#6264a7',
+        'webex': '#07c160', 'goldcast': '#ff6b35', 'cvent': '#1a73e8',
+        'on24': '#004990', 'salesforce-plus': '#00a1e0'
+      };
+      return map[platform] || '#94a3b8';
+    }
+
+    function platformIcon(meetingUrl) {
+      try {
+        const domain = new URL(meetingUrl).hostname;
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      } catch { return ''; }
+    }
+
+    const calendarSvg = '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>';
+    const captureSvg = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3.707 2.293a1 1 0 00-1.414 1.414l6.921 6.922c.05.062.105.118.168.167l6.91 6.911a1 1 0 001.415-1.414l-.675-.675A9.001 9.001 0 0015.97 4.04a1 1 0 00-1.32-.083l-.605.464a7.001 7.001 0 01.739 10.503l-1.473-1.473A5.001 5.001 0 008.37 7.19L6.97 5.79a3.001 3.001 0 014.06.6l.605-.464a1 1 0 00.083-1.32A5.001 5.001 0 003.707 2.293z"/><path d="M9.768 10.95a.5.5 0 01.078.67l-.257.329a7.004 7.004 0 01-.401 5.272 1 1 0 01-1.768-.934 5.002 5.002 0 00.318-3.724l.078-.1a.5.5 0 01.67-.078l.282-.282 1-.153z"/></svg>';
+
+    async function refresh() {
+      const banner = document.getElementById('error-banner');
+      try {
+        const [status, queued, today, captures] = await Promise.all([
+          fetchJSON('/status'),
+          fetchJSON('/events/queued'),
+          fetchJSON('/today?days=14').catch(() => ({ events: [] })),
+          fetchJSON('/captures')
+        ]);
+
+        banner.style.display = 'none';
+        if (!serverStartTime) serverStartTime = Date.now();
+
+        // Server status
+        const bar = document.getElementById('status-bar');
+        const deepgramOk = status.status === 'running';
+        const hasAnthropic = Object.keys(status.accounts || {}).length > 0 || status.activeSessions > 0;
+        bar.innerHTML = `
+          <div class="status-item"><span class="status-dot ok"></span> Server running</div>
+          <div class="status-item"><span class="status-dot ${deepgramOk ? 'ok' : 'off'}"></span> Deepgram</div>
+          <div class="status-item"><span class="status-dot ${status.hasAnthropic ? 'ok' : 'warn'}"></span> Claude Vision</div>
+          <div class="status-item"><span class="status-dot ${status.hasCalendar ? 'ok' : 'off'}"></span> Calendar</div>
+        `;
+
+        // Calendar accounts
+        const accountsBody = document.getElementById('accounts-body');
+        const accounts = status.accounts || {};
+        const accountNames = Object.keys(accounts);
+        if (accountNames.length === 0) {
+          accountsBody.innerHTML = '<div style="font-size:12px;color:#9ca3af;">No accounts configured</div>';
+        } else {
+          accountsBody.innerHTML = accountNames.map(name => `
+            <div class="account-row">
+              <span class="account-name">${escapeHtml(name)}</span>
+              ${accounts[name]
+                ? '<span class="badge badge-green">Connected</span>'
+                : '<span class="badge badge-red">Not connected</span>'}
+            </div>
+          `).join('');
+        }
+
+        // Active captures
+        const activeBody = document.getElementById('active-body');
+        const activeCount = document.getElementById('active-count');
+        const sessions = status.sessions || {};
+        const sessionIds = Object.keys(sessions);
+        activeCount.textContent = sessionIds.length > 0 ? sessionIds.length : '';
+        if (sessionIds.length === 0) {
+          activeBody.innerHTML = '<div class="card-empty">No active captures</div>';
+        } else {
+          activeBody.innerHTML = sessionIds.map(id => {
+            const s = sessions[id];
+            return `
+              <div class="capture-row">
+                <div class="pulse"></div>
+                <div class="capture-info">
+                  <div class="capture-title">${escapeHtml(s.tabTitle || id)}</div>
+                  <div class="capture-stats">
+                    <span>${s.transcriptSegments || 0} transcript segments</span>
+                    <span>${s.framesCaptured || 0} frames</span>
+                    <span>${formatDuration(s.startTime)}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Event queue — grouped by day
+        const queueBody = document.getElementById('queue-body');
+        const queueCount = document.getElementById('queue-count');
+        const events = (queued.events || []).filter(e => e.status !== 'past');
+        queueCount.textContent = events.length > 0 ? events.length : '';
+        if (events.length === 0) {
+          queueBody.innerHTML = '<div class="card-empty">No queued events</div>';
+        } else {
+          const qGrouped = {};
+          for (const e of events) {
+            const date = new Date(e.start);
+            const key = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            if (!qGrouped[key]) qGrouped[key] = { date, events: [] };
+            qGrouped[key].events.push(e);
+          }
+          queueBody.innerHTML = Object.values(qGrouped).map(group => `
+            <div class="day-header">${group.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+            ${group.events.map(e => `
+            <div class="row">
+              <span class="row-time">${formatTime(e.start)}</span>
+              <div class="row-content">
+                <div class="row-title">${escapeHtml(e.summary || e.id)}</div>
+                <div class="row-meta">
+                  ${e.platform ? `<span>${platformLabel(e.platform)}</span>` : ''}
+                  ${e.minutesUntilStart != null ? `<span>${e.minutesUntilStart > 0 ? `in ${e.minutesUntilStart}m` : 'now'}</span>` : ''}
+                </div>
+              </div>
+              <span class="row-badge">
+                ${badgeFor(e.status)}
+                ${e.status !== 'in-progress' && e.status !== 'past' ? `
+                  <div class="mode-toggle" data-mode="${e.mode || 'notify'}" data-event-id="${escapeAttr(e.id)}" onclick="toggleMode(this)" title="Click to toggle capture mode">
+                    <span class="mode-notify">Notify</span>
+                    <span class="mode-auto">Auto</span>
+                  </div>
+                  <button class="btn-remove" data-event-id="${escapeAttr(e.id)}" onclick="removeFromQueue(this.dataset.eventId)" title="Remove from queue">&times;</button>
+                ` : (e.mode ? badgeFor(e.mode) : '')}
+              </span>
+            </div>
+            `).join('')}
+          `).join('');
+        }
+
+        // Upcoming schedule — grouped by day
+        const todayBody = document.getElementById('today-body');
+        const todayCount = document.getElementById('today-count');
+        const todayEvents = today.events || [];
+        todayCount.textContent = todayEvents.length > 0 ? `${todayEvents.length} events` : '';
+        if (todayEvents.length === 0) {
+          todayBody.innerHTML = '<div class="card-empty">No events in the next 2 weeks</div>';
+        } else {
+          const queuedIds = new Set((queued.events || []).map(q => q.id));
+          const now = new Date();
+          const todayDate = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+          const tmrw = new Date(now); tmrw.setDate(tmrw.getDate() + 1);
+          const tomorrowDate = tmrw.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+          const grouped = {};
+          for (const e of todayEvents) {
+            const d = new Date(e.start);
+            const key = d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            if (!grouped[key]) grouped[key] = { date: d, events: [] };
+            grouped[key].events.push(e);
+          }
+
+          let html = '';
+          for (const [key, group] of Object.entries(grouped)) {
+            let label, cls = '';
+            if (key === todayDate) { label = 'Today'; cls = ' today'; }
+            else if (key === tomorrowDate) { label = 'Tomorrow'; cls = ' tomorrow'; }
+            else { label = group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }); }
+
+            html += `<div class="day-header${cls}">${label}</div>`;
+
+            html += group.events.map(e => {
+              const nowMs = Date.now();
+              const start = new Date(e.start).getTime();
+              const end = new Date(e.end).getTime();
+              const isQueued = queuedIds.has(e.id);
+              const color = platformColor(e.platform);
+              const icon = e.meetingUrl ? platformIcon(e.meetingUrl) : '';
+              let statusBadge = '';
+              if (nowMs >= start && nowMs <= end) {
+                statusBadge = '<span class="badge badge-green">Live Now</span>';
+              } else if (start > nowMs && start - nowMs < 30 * 60000) {
+                statusBadge = '<span class="badge badge-yellow">Starting Soon</span>';
+              }
+              return `
+                <div class="event-card" style="border-left: 3px solid ${color};">
+                  <div class="event-icon" style="background:${color}12;">
+                    ${icon ? `<img src="${icon}" onerror="this.parentElement.innerHTML='🎙'" alt="">` : '🎙'}
+                  </div>
+                  <div class="event-body">
+                    <div class="event-header">
+                      <div class="event-title">${escapeHtml(e.summary)}</div>
+                      <div class="event-time">${formatTime(e.start)} – ${formatTime(e.end)}</div>
+                    </div>
+                    <div class="event-tags">
+                      ${e.platform ? `<span class="event-tag ${e.platform}">${platformLabel(e.platform)}</span>` : ''}
+                      ${e.account ? `<span class="event-tag">${escapeHtml(e.account)}</span>` : ''}
+                      ${statusBadge}
+                    </div>
+                    ${e.description ? `<div class="event-desc">${escapeHtml(e.description)}</div>` : ''}
+                    <div class="event-actions">
+                      ${e.meetingUrl && !isQueued
+                        ? `<button class="btn btn-primary" onclick="queueEvent(this, ${escapeAttr(JSON.stringify(e))})">
+                            ${captureSvg} Queue Capture
+                          </button>`
+                        : ''}
+                      ${isQueued ? '<span class="badge badge-blue">Queued for Capture</span>' : ''}
+                      ${e.calendarLink
+                        ? `<a href="${e.calendarLink}" target="_blank" class="btn btn-secondary">
+                            ${calendarSvg} View in Calendar
+                          </a>`
+                        : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+          todayBody.innerHTML = html;
+        }
+
+        // Recent captures
+        const capturesBody = document.getElementById('captures-body');
+        const capturesCount = document.getElementById('captures-count');
+        const capList = captures.captures || [];
+        capturesCount.textContent = capList.length > 0 ? capList.length : '';
+        if (capList.length === 0) {
+          capturesBody.innerHTML = '<div class="card-empty">No captures yet</div>';
+        } else {
+          capturesBody.innerHTML = capList.slice(0, 20).map(c => {
+            const meta = [
+              c.date && c.time ? `${c.date} at ${c.time}` : c.date || '',
+              c.duration || '',
+              c.transcriptSegments ? `${c.transcriptSegments} segments` : '',
+              c.frameCount ? `${c.frameCount} slides` : ''
+            ].filter(Boolean).join(' · ');
+
+            const context = c.firstSlide || c.preview || '';
+            const fileList = (c.files || []).filter(f => f === 'combined.md' || f === 'combined-output.json');
+            const shortPath = c.dirPath ? c.dirPath.replace(/^\/Users\/[^/]+/, '~') : '';
+
+            return `
+              <div class="recent-row" style="align-items: flex-start;">
+                <div class="recent-icon">${c.hasSlides ? '🖼' : '🎙'}</div>
+                <div class="recent-info">
+                  <div class="recent-title">${escapeHtml(c.title || c.id)}</div>
+                  <div class="recent-meta">${meta}</div>
+                  ${context ? `<div class="recent-context">${escapeHtml(context)}</div>` : ''}
+                  <div class="recent-actions">
+                    ${fileList.includes('combined.md') ? `<span class="badge badge-gray">combined.md</span>` : ''}
+                    ${fileList.includes('combined-output.json') ? `<span class="badge badge-gray">JSON</span>` : ''}
+                  </div>
+                  ${shortPath ? `<div class="recent-path">${escapeHtml(shortPath)}</div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        banner.textContent = `Cannot reach Scout server at ${BASE} — is it running?`;
+        banner.style.display = 'block';
+      }
+    }
+
+    function updateUptime() {
+      if (!serverStartTime) return;
+      const el = document.getElementById('uptime');
+      const ms = Date.now() - serverStartTime;
+      const secs = Math.floor(ms / 1000) % 60;
+      const mins = Math.floor(ms / 60000) % 60;
+      const hrs = Math.floor(ms / 3600000);
+      if (hrs > 0) el.textContent = `Up ${hrs}h ${mins}m`;
+      else el.textContent = `Up ${mins}m ${secs}s`;
+    }
+
+    function tick() {
+      countdown--;
+      document.getElementById('refresh-info').textContent = `Refreshing in ${countdown}s`;
+      if (countdown <= 0) {
+        countdown = REFRESH_INTERVAL;
+        refresh();
+      }
+      updateUptime();
+    }
+
+    refresh();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
